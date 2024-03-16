@@ -1,6 +1,6 @@
 import pandas as pd
-import Node
-import Edge
+from GraphApp.Models.Node import Node
+from GraphApp.Models.Edge import Edge
 
 class Graph:
     def __init__(self):

@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
-from Models import Graph
+from GraphApp.Models.Graph import Graph
 import json
 
 # Create your views here.

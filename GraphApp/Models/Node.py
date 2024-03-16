@@ -1,5 +1,3 @@
-import Edge
-
 class Node:
     def __init__(self, id, value, label, data, type, radius, coordenates):
         self.__id = id
