@@ -1,9 +1,11 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 from GraphApp.Models.Graph import Graph
 import json
 
 # Create your views here.
+@csrf_exempt 
 def matrix(request):
     if request.method == 'POST':
         try:
@@ -21,7 +23,8 @@ def matrix(request):
             return JsonResponse({'error': str(e)}, status=400)
     else:
         return JsonResponse({'error': 'Método no permitido'}, status=405)
-    
+
+@csrf_exempt    
 def random_graph(request):
     if request.method == 'POST':
         try:
@@ -36,15 +39,15 @@ def random_graph(request):
             graph = Graph()
             graph.randomGraph(num_nodes, complete, conex, pondered, directed)
 
-            json = graph.toJson()
+            resp = graph.toJson()
 
-            return JsonResponse(json)
+            return JsonResponse(resp)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
     else:
         return JsonResponse({'error': 'Método no permitido'}, status=405)
     
-
+@csrf_exempt 
 def excel_export(request):
     if request.method == 'POST':
         try:
@@ -66,6 +69,7 @@ def excel_export(request):
     else:
         return JsonResponse({'error': 'Método no permitido'}, status=405)
 
+@csrf_exempt 
 def saveJson(request):
     if request.method == 'POST':
         try:

@@ -25,14 +25,21 @@ class Graph:
     # Methods
     def addNode(self, id, value, label, data, type, radius, coordenates):
         self.__nodes.append(Node(id, value, label, data, type, radius, coordenates))
+        self.__edges[str(id)] = []
 
     def addEdge(self, type, source, target, weight, directed):
-        if source in self.__edges and target in self.__edges:
-            self.__edges[source].append(Edge(type, source, target, weight, directed))
+        if self.nodeExists(source) and self.nodeExists(target):
+            self.__edges[str(source)].append(Edge(type, source, target, weight, directed))
         
         if(not directed):
             if target in self.__edges and source in self.__edges:
-                self.__edges[target].append(Edge(type, target, source, weight, directed))
+                self.__edges[str(target)].append(Edge(type, target, source, weight, directed))
+    
+    def nodeExists(self, id):
+        for node in self.__nodes:
+            if node.getId() == id:
+                return True
+        return False
 
     def createFromJson(self, json):
         for node in json['nodes']:
@@ -49,7 +56,9 @@ class Graph:
             data = {}
             type = ''
             radius = np.random.randint(1, 3)
-            coordenates = [np.random.randint(1, 200), np.random.randint(1, 200)]
+            coordenates = {}
+            coordenates['x'] = np.random.randint(1, 100)
+            coordenates['y'] = np.random.randint(1, 100)
 
             self.addNode(id, value, label, data, type, radius, coordenates)
 
@@ -91,18 +100,19 @@ class Graph:
                 groups = np.array_split(numbers, num_splits)
 
                 for group in groups:
-                    for item in group:
-                        if pondered:
-                            weight = np.random.randint(1, 100)
-                        else:
-                            weight = 1
+                    if len(group) > 1:
+                        for item in group:
+                            if pondered:
+                                weight = np.random.randint(1, 100)
+                            else:
+                                weight = 1
 
-                        to = np.random.choice(group)
-
-                        while to == item:
                             to = np.random.choice(group)
 
-                        self.addEdge('', item, to, weight, directed)
+                            while to == item:
+                                to = np.random.choice(group)
+
+                            self.addEdge('', np.int32(item).item(), np.int32(to).item(), weight, directed)
             
     def toJson(self):
         json = {}
@@ -119,7 +129,7 @@ class Graph:
 
             linked_to = []
 
-            for edge in self.__edges[node.getId()]:
+            for edge in self.__edges[str(node.getId())]:
                 aux2 = {}
 
                 aux2['type'] = edge.getType()
