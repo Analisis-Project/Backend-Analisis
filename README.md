@@ -3,18 +3,22 @@
 Tener python 3.12.2 instalado (con el path activado) y la libreria virtualenv
 
 # Ejecutar en consola:
-### 1. virtualenv venv
+### 1. Creamos el entrono virtual
 
-### 2. Activar entorno virtual
+virtualenv venv
+
+### 2. Activamos el entorno virtual
 
 -----------------------------
 
-en bash
+En bash
 source venv/Scripts/activate
 
-en cmd
+En cmd
 .\venv\Scripts\activate
 
 -----------------------------
 
-### 3. pip install -r "requeriments.txt"
+### 3. Instalamos las librerias necesarias
+
+pip install -r "requeriments.txt"

@@ -22,6 +22,28 @@ def matrix(request):
     else:
         return JsonResponse({'error': 'Método no permitido'}, status=405)
     
+def random_graph(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+
+            num_nodes = data['num_nodes']
+            complete = data['complete']
+            conex = data['conex']
+            pondered = data['pondered']
+            directed = data['directed']
+
+            graph = Graph()
+            graph.randomGraph(num_nodes, complete, conex, pondered, directed)
+
+            json = graph.toJson()
+
+            return JsonResponse(json)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    else:
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
 
 def excel_export(request):
     if request.method == 'POST':

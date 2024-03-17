@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from GraphApp.Models.Node import Node
 from GraphApp.Models.Edge import Edge
 
@@ -40,6 +41,69 @@ class Graph:
         for edge in json['edges']:
             self.addEdge(edge['type'], edge['source'], edge['target'], edge['weight'], edge['directed'])
 
+    def randomGraph(self, num_nodes, complete = False, conex = True, pondered = False, directed = False):
+        for i in range(1, num_nodes + 1):
+            id = i
+            value = np.random.randint(1, 100)
+            label = str(i)
+            data = {}
+            type = ''
+            radius = np.random.randint(1, 3)
+            coordenates = [np.random.randint(1, 200), np.random.randint(1, 200)]
+
+            self.addNode(id, value, label, data, type, radius, coordenates)
+
+        if complete:
+            for i in range(1, num_nodes):
+                for j in range(i+1, num_nodes + 1):
+                    if pondered:
+                        weight = np.random.randint(1, 100)
+                    else:
+                        weight = 1
+
+                    self.addEdge('', i, j, weight, directed)
+        else:
+            if conex:
+                for i in range(1, num_nodes + 1):
+                    if pondered:
+                        weight = np.random.randint(1, 100)
+                    else:
+                        weight = 1
+                    
+                    to = np.random.randint(1, num_nodes + 1)
+
+                    while to == i:
+                        to = np.random.randint(1, num_nodes + 1)
+
+                    self.addEdge('', i, to, weight, directed)
+            else:
+                num_splits = 0
+                if num_nodes < 3:
+                    return
+                elif 3 <= num_nodes <= 5:
+                    num_splits = np.random.randint(2, num_nodes)
+                else:
+                    num_splits = np.random.randint(2, int(num_nodes/2) + 1)
+
+                numbers = np.arange(1, num_nodes + 1)
+                np.random.shuffle(numbers)
+
+                groups = np.array_split(numbers, num_splits)
+
+                for group in groups:
+                    for item in group:
+                        if pondered:
+                            weight = np.random.randint(1, 100)
+                        else:
+                            weight = 1
+
+                        to = np.random.choice(group)
+
+                        while to == item:
+                            to = np.random.choice(group)
+
+                        self.addEdge('', item, to, weight, directed)
+            
     def toJson(self):
         json = {}
         data = []
