@@ -27,7 +27,7 @@ class Graph:
         self.__nodes.append(Node(id, value, label, data, type, radius, coordenates))
         self.__edges[str(id)] = []
 
-    def addEdge(self, type, source, target, weight, directed):
+    def addEdge(self, type, source, target, weight, directed = True):
         if self.nodeExists(source) and self.nodeExists(target):
             self.__edges[str(source)].append(Edge(type, source, target, weight, directed))
         
@@ -46,7 +46,7 @@ class Graph:
             self.addNode(node['id'], node['value'], node['label'], node['data'], node['type'], node['radius'], node['coordenates'])
 
         for edge in json['edges']:
-            self.addEdge(edge['type'], edge['source'], edge['target'], edge['weight'], edge['directed'])
+            self.addEdge(edge['type'], edge['from'], edge['to'], edge['weight'])
 
     def randomGraph(self, num_nodes, complete = False, conex = True, pondered = False, directed = False):
         for i in range(1, num_nodes + 1):
