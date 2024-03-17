@@ -134,12 +134,12 @@ class Graph:
 
                 aux2['type'] = edge.getType()
                 aux2['from'] = edge.getSource()
-                aux2['to'] = edge.getTarget()
+                aux2['nodeId'] = edge.getTarget()
                 aux2['weight'] = edge.getWeight()
 
                 linked_to.append(aux2)
 
-            aux['linked_to'] = linked_to
+            aux['linkedTo'] = linked_to
             aux['radius'] = node.getRadius()
             aux['coordenates'] = node.getCoordenates()
 

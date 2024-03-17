@@ -11,10 +11,10 @@ virtualenv venv
 
 -----------------------------
 
-En bash
+En bash:<br>
 source venv/Scripts/activate
 
-En cmd
+En cmd:<br>
 .\venv\Scripts\activate
 
 -----------------------------
