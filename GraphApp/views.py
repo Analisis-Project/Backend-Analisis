@@ -80,10 +80,7 @@ def saveJson(request):
 
             resp = graph.toJson()
 
-            response = HttpResponse(resp, content_type='application/json')
-            response['Content-Disposition'] = 'attachment; filename="datos.json"'
-
-            return response
+            return JsonResponse(resp)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
     else:

@@ -161,9 +161,8 @@ class Graph:
             for edge in edge_list:
                 dest = edge.getTarget()
                 weight = edge.getWeight()
-                adj_matrix.loc[src, dest] = weight
+                adj_matrix.loc[str(dest), str(src)] = weight
                 
-                if not edge.get('directed', False):
-                    adj_matrix.loc[dest, src] = weight
-        
+                if not edge.getDirected():
+                    adj_matrix.loc[str(src), str(dest)] = weight
         return adj_matrix
