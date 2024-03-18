@@ -22,3 +22,7 @@ En cmd:<br>
 ### 3. Instalamos las librerias necesarias
 
 pip install -r "requeriments.txt"
+
+### 4. Ejecutamos el programa
+
+python manage.py runserver
