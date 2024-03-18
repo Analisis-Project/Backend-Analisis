@@ -78,9 +78,9 @@ def saveJson(request):
             graph = Graph()
             graph.createFromJson(data)
 
-            json = graph.toJson()
+            resp = graph.toJson()
 
-            response = HttpResponse(json, content_type='application/json')
+            response = HttpResponse(resp, content_type='application/json')
             response['Content-Disposition'] = 'attachment; filename="datos.json"'
 
             return response
