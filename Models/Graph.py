@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
-from GraphApp.Models.Node import Node
-from GraphApp.Models.Edge import Edge
+from Models.Node import Node
+from Models.Edge import Edge
 
 class Graph:
     def __init__(self):

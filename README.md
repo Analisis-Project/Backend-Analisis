@@ -21,8 +21,8 @@ En cmd:<br>
 
 ### 3. Instalamos las librerias necesarias
 
-pip install -r "requeriments.txt"
+pip install -r "requirements.txt"
 
 ### 4. Ejecutamos el programa
 
-python manage.py runserver
+uvicorn main:app
