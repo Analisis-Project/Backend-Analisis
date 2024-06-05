@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from Models.Node import Node
 from Models.Edge import Edge
+from collections import deque
 
 class Graph:
     def __init__(self):
@@ -126,6 +127,7 @@ class Graph:
             aux['label'] = node.getLabel()
             aux['data'] = node.getData()
             aux['type'] = node.getType()
+            aux['color'] = node.getColor()
 
             linked_to = []
 
@@ -166,3 +168,82 @@ class Graph:
                 if not edge.getDirected():
                     adj_matrix.loc[str(src), str(dest)] = weight
         return adj_matrix
+
+    def isBipartite(self):
+        color = {}
+        for node in self.__nodes:
+            color[node.getId()] = -1  # -1 means uncolored
+
+        for start_node in self.__nodes:
+            if color[start_node.getId()] == -1:  # Node is not colored
+                queue = deque([start_node.getId()])
+                color[start_node.getId()] = 0  # Start coloring with 0
+
+                while queue:
+                    current = queue.popleft()
+                    current_color = color[current]
+                    next_color = 1 - current_color
+
+                    for edge in self.__edges[str(current)]:
+                        neighbor = edge.getTarget()
+                        if color[neighbor] == -1:
+                            color[neighbor] = next_color
+                            queue.append(neighbor)
+                        elif color[neighbor] == current_color:
+                            return False
+        return True
+    
+    def connectedComponents(self):
+        def dfs(node_id, color, component_count, current_color):
+            stack = [node_id]
+            unvisited = [node_id]
+            visited = []
+
+            while stack:
+                node = stack.pop() 
+
+                for edge in self.__edges[str(node)]:
+                    neighbor = edge.getTarget()
+                    if self.__nodes_dict[neighbor].getColor() == "#FFFFFF" and (neighbor not in unvisited):  # unvisited
+                        unvisited.append(neighbor)
+                        stack.append(neighbor)
+                    else:
+                        if neighbor not in unvisited:
+                            visited.append(neighbor)
+
+            if visited and unvisited:
+                visited_node = visited[0]
+                for nodeU in unvisited:
+                    self.__nodes_dict[nodeU].setColor(self.__nodes_dict[visited_node].getColor())
+
+            elif not visited and unvisited:
+                component_count += 1
+                current_color += 1
+                for nodeU in unvisited:
+                    self.__nodes_dict[nodeU].setColor(color)
+
+            return component_count, current_color
+
+
+        self.__nodes_dict = {node.getId(): node for node in self.__nodes}
+        component_count = 0
+        colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF']  # colors to use
+        current_color = 0
+
+        for node in self.__nodes:
+            if node.getColor() == "#FFFFFF":  # unvisited
+                if current_color >= len(colors):
+                    current_color = 0
+                
+                component_count, current_color = dfs(node.getId(), colors[current_color], component_count, current_color)
+
+        return component_count
+    
+    def analytics(self):
+        resp = {}
+
+        resp['isBipartite'] = self.isBipartite()
+        resp['connectedComponents'] = self.connectedComponents()
+        resp['graphData'] = self.toJson()
+
+        return resp

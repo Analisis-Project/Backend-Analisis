@@ -87,3 +87,19 @@ async def save_json(request: Request):
     
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+@app.post("/graph/analytics")
+async def analytics(request: Request):
+    try:
+        body = await request.body()
+        data = json.loads(body.decode("utf-8"))
+
+        graph = Graph()
+        graph.createFromJson(data)
+
+        resp = graph.analytics()
+
+        return Response(content=json.dumps(resp), media_type="application/json", status_code=200)
+    
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

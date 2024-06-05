@@ -7,6 +7,7 @@ class Node:
         self.__type = type
         self.__radius = radius
         self.__coordenates = coordenates
+        self.__color = "#FFFFFF"
 
     # Getters
     def getId(self):
@@ -30,6 +31,9 @@ class Node:
     def getCoordenates(self):
         return self.__coordenates
     
+    def getColor(self):
+        return self.__color
+    
     # Setters
     def setId(self, id):
         self.__id = id
@@ -51,3 +55,6 @@ class Node:
 
     def setCoordenates(self, coordenates):
         self.__coordenates = coordenates
+
+    def setColor(self, color):
+        self.__color = color
