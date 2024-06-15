@@ -37,9 +37,10 @@ Cf = {
 def expand(*dicts, keys, key=None):
     n = len(keys)
     key_to_index = {k: i for i, k in enumerate(keys)}
+    column_index = {k: i for i, k in enumerate(dicts[0].keys())}
     
     if key:
-        if key not in key_to_index:
+        if key not in column_index:
             raise ValueError(f"Key '{key}' not found in dictionaries")
         
         row = np.zeros(n, dtype=np.float16)
@@ -76,36 +77,82 @@ def marginalize_row(dicts, index):
     
     return new_dicts
 
-# EJEMPLO DE USO DE LAS FUNCIONES
-expanded_matrix = expand(Af, Bf, Cf, keys=Af.keys())
-print("Matriz expandida")
-print(expanded_matrix)
+# # EJEMPLO DE USO DE LAS FUNCIONES
+# expanded_matrix = expand(Af, Bf, Cf, keys=Af.keys())
+# print("Matriz expandida")
+# print(expanded_matrix)
 
-result_df = pd.DataFrame(expanded_matrix, index=Af.keys(), columns=Af.keys())
-print("\nDataframe de la matriz expandida")
+# result_df = pd.DataFrame(expanded_matrix, index=Af.keys(), columns=Af.keys())
+# print("\nDataframe de la matriz expandida")
+# print(result_df)
+
+# # Ejemplo de uso con una clave específica
+# key = '010'
+# specific_row = expand(Af, Bf, Cf, keys=Af.keys(), key=key)
+# print("\nSacar fila especifica sin tener que calcular toda la matriz, Fila: ", key)
+# print(specific_row)
+
+# specific_row_df = pd.DataFrame(specific_row, index=Af.keys(), columns=[key]).transpose()
+# print("\nDataframe de la fila especifica")
+# print(specific_row_df)
+
+# transformed_dicts = marginalize_row([Af, Bf, Cf], index=0)
+
+# print("\nDatos de entrada después de marginalizar A")
+# print("A: ", transformed_dicts[0])
+# print("B: ", transformed_dicts[1])
+# print("C: ", transformed_dicts[2])
+
+# print("\nMatriz expandida después de marginalizar")
+# expanded_matrix = expand(transformed_dicts[0], transformed_dicts[1], transformed_dicts[2], keys=Af.keys())
+# print(expanded_matrix)
+
+# print("\nDataframe de la matriz expandida después de marginalizar")
+# result_df = pd.DataFrame(expanded_matrix, index=transformed_dicts[0].keys(), columns=Af.keys())
+# print(result_df)
+
+
+#EJEMPLO DEL TALLER EN CLASE BACKTRACKING PUNTO 2
+print("B original")
+print(Bf)
+
+print("\nEn B marginalizar A")
+transformed_B = marginalize_row([Bf], index=0)
+print(transformed_B[0])
+
+keyys = transformed_B[0].keys()
+
+print("\nEn B marginalizar C")
+transformed_B = marginalize_row([transformed_B][0], index=0)
+print(transformed_B[0])
+
+print("\nC original")
+print(Cf)
+
+print("\nEn C marginalizar A")
+transformed_C = marginalize_row([Cf], index=0)
+print(transformed_C[0])
+
+print("\nEn C marginalizar C")
+transformed_C = marginalize_row([transformed_C[0]], index=0)
+print(transformed_C[0])
+
+key = '0'
+
+print("\nRESULTADOS EN FORMA DE MATRIZ")
+print("Producto tensor")
+result1 = expand(transformed_B[0], transformed_C[0], keys = keyys)
+print(result1)
+
+print("\nProducto tensor cuando C vale 0")
+result2 = expand(transformed_B[0], transformed_C[0], keys = keyys, key = key)
+print(result2)
+
+print("\nRESULTADOS EN FORMA DE DATAFRAME")
+print("Producto tensor")
+result_df = pd.DataFrame(result1, index=transformed_C[0].keys(), columns=keyys)
 print(result_df)
 
-# Ejemplo de uso con una clave específica
-key = '010'
-specific_row = expand(Af, Bf, Cf, keys=Af.keys(), key=key)
-print("\nSacar fila especifica sin tener que calcular toda la matriz, Fila: ", key)
-print(specific_row)
-
-specific_row_df = pd.DataFrame(specific_row, index=Af.keys(), columns=[key]).transpose()
-print("\nDataframe de la fila especifica")
-print(specific_row_df)
-
-transformed_dicts = marginalize_row([Af, Bf, Cf], index=0)
-
-print("\nDatos de entrada después de marginalizar A")
-print("A: ", transformed_dicts[0])
-print("B: ", transformed_dicts[1])
-print("C: ", transformed_dicts[2])
-
-print("\nMatriz expandida después de marginalizar")
-expanded_matrix = expand(transformed_dicts[0], transformed_dicts[1], transformed_dicts[2], keys=Af.keys())
-print(expanded_matrix)
-
-print("\nDataframe de la matriz expandida después de marginalizar")
-result_df = pd.DataFrame(expanded_matrix, index=transformed_dicts[0].keys(), columns=Af.keys())
+print("\nProducto tensor cuando C vale 0")
+result_df = pd.DataFrame(result2, index=keyys, columns=[key]).transpose()
 print(result_df)
