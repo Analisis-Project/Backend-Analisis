@@ -63,7 +63,10 @@ def obtener_cadena_valores(opcion):
     combinacionesOP = combinaciones[::-1]
     return combinaciones[1:-1], combinacionesOP[1:-1]
 
-def getDistribution(distribution_str, dicts, key):
+def getDistribution(distribution_str, dicts, key, cache):
+    if (distribution_str, key) in cache:
+        return cache[(distribution_str, key)]
+    
     new_keys = [c for c in distribution_str.split('/')[0] if c != '0']
     new_keys_cols = [c for c in distribution_str.split('/')[1] if c != '0']
     cadenas = distribution_str.split('/')
@@ -97,9 +100,17 @@ def getDistribution(distribution_str, dicts, key):
                 column_index[key2] += rdict[key][key2] / len(rdict.keys())
         rdict = {cadenas.replace('0', ''): column_index}
 
+    cache[(distribution_str, key)] = (result, rdict)
     return result, rdict
 
-def calcular_resultado(dict1, dict2, keys, key):
+def calcular_resultado(dict1, dict2, keys, key, cache):
+    def dict_to_hashable(d):
+        return frozenset((k, frozenset(v.items())) for k, v in d.items())
+
+    cache_key = (dict_to_hashable(dict1), dict_to_hashable(dict2), key)
+    if cache_key in cache:
+        return cache[cache_key]
+    
     resultado = {}
     resultadoF = {}
     new_keys1 = [c for c in next(iter(dict1.keys())).split('/')[0] if c != '0']
@@ -120,6 +131,7 @@ def calcular_resultado(dict1, dict2, keys, key):
             value2 = next(iter(dict2.values()))[key2]
             resultado[key] = value2
         resultadoF[all_letters] = resultado
+        cache[cache_key] = (resultadoF, all_letters)
         return resultadoF, all_letters
     elif not new_keys2 and new_keys1:
         for key in keys:
@@ -128,6 +140,7 @@ def calcular_resultado(dict1, dict2, keys, key):
             value1 = next(iter(dict1.values()))[key1]
             resultado[key] = value1
         resultadoF[all_letters] = resultado
+        cache[cache_key] = (resultadoF, all_letters)
         return resultadoF, all_letters
 
     for key in keys:
@@ -141,6 +154,7 @@ def calcular_resultado(dict1, dict2, keys, key):
         resultado[key] = result
 
     resultadoF[all_letters] = resultado
+    cache[cache_key] = (resultadoF, all_letters)
     return resultadoF, all_letters
 
 def calculate_emd(dist1, dist2, distance_matrix):
@@ -163,7 +177,7 @@ def calculate_emd(dist1, dist2, distance_matrix):
 def hamming_distance(bin1, bin2):
     return sum(c1 != c2 for c1, c2 in zip(bin1, bin2))
 
-def fuerza_bruta(*dicts, key):
+def bottom_up(*dicts, key):
     combinaciones, combinacionesOP = obtener_cadena_valores("ABC/ABC")
     menor = np.inf
     best_combination = ""
@@ -186,10 +200,12 @@ def fuerza_bruta(*dicts, key):
         for j, key2 in enumerate(keys):
             distance_matrix[i, j] = hamming_distance(keyy, key2)
 
+    cache = {}
+
     for combinacion, combinacion_op in zip(combinaciones, combinacionesOP):
-        result1, d1 = getDistribution(combinacion, dicts, key=key)
-        result2, d2 = getDistribution(combinacion_op, dicts, key=key)
-        rx, letters = calcular_resultado(d1, d2, dicts[0].keys(), key=key)
+        result1, d1 = getDistribution(combinacion, dicts, key=key, cache=cache)
+        result2, d2 = getDistribution(combinacion_op, dicts, key=key, cache=cache)
+        rx, letters = calcular_resultado(d1, d2, dicts[0].keys(), key=key, cache=cache)
         pdrx = pd.DataFrame.from_dict(rx).transpose()
         values1 = pdrx.iloc[0].values
         emd_distance = calculate_emd(values1, values2, distance_matrix)
@@ -237,4 +253,4 @@ Cf = {
     '111': {'0': 1, '1': 0}
 }
 
-fuerza_bruta(Af, Bf, Cf, key='001')
+bottom_up(Af, Bf, Cf, key='001')
