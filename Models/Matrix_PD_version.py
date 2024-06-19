@@ -49,6 +49,19 @@ def marginalize_row(dicts, index):
         new_dicts.append(transformed_dict)
     return new_dicts
 
+def marginalize_column(dict, index):
+    transformed_dict = {}
+    for key, value_dict in dict.items():
+        if key not in transformed_dict:
+            transformed_dict[key] = {}
+        for k, v in value_dict.items():
+            new_key = k[:index] + k[index + 1:]
+            if new_key not in transformed_dict[key]:
+                transformed_dict[key][new_key] = v
+            else:
+                transformed_dict[key][new_key] += v
+    return transformed_dict
+
 def obtener_cadena_valores(opcion):
     def backtrack(index, combinacion):
         if index == len(opcion):
@@ -254,4 +267,4 @@ Cf = {
     '111': {'0': 1, '1': 0}
 }
 
-bottom_up(Af, Bf, Cf, key='001')
+#bottom_up(Af, Bf, Cf, key='001')
