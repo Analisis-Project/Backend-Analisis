@@ -169,7 +169,6 @@ def generar_combinaciones_pares(num_letras):
 
 def create_statesiniciales(*dicts, key):
     pq = PriorityQueue()
-    dict_names = ['A', 'B', 'C']
     nLetra = len(dicts)
     matrixad=np.zeros((nLetra,nLetra))
     tabla_original = expand(*dicts, keys=dicts[0].keys())
@@ -178,13 +177,15 @@ def create_statesiniciales(*dicts, key):
     posicion = num.index(key)
     orden = generar_combinaciones_pares(nLetra)
     letra_a_indice = {letra: idx for idx, letra in enumerate(string.ascii_uppercase[:nLetra])}
+
+    
     for par in orden:
         tabla_a_modificar = dicts[letra_a_indice[par[0]]]
         col_a_eliminar = letra_a_indice[par[1]]
         tabla_modificada = condensar_y_restaurar_tabla(tabla_a_modificar, col_a_eliminar)
     
     # Crear una nueva lista de tablas para la expansión, reemplazando la tabla modificada
-        tablas_para_expandir = [        tabla_modificada if i == letra_a_indice[par[0]] else dicts[i]
+        tablas_para_expandir = [ tabla_modificada if i == letra_a_indice[par[0]] else dicts[i]
             for i in range(nLetra)
         ]
 
@@ -197,7 +198,7 @@ def create_statesiniciales(*dicts, key):
         emd_exacto = calculate_emd(filaO, filaA, distance_matrix)
 
         if emd_exacto == 0.0:
-            dicts = tablas_para_expandir = [        tabla_modificada if i == letra_a_indice[par[0]] else dicts[i]
+            dicts = tablas_para_expandir = [  tabla_modificada if i == letra_a_indice[par[0]] else dicts[i]
             for i in range(nLetra)
         ]
         
@@ -213,43 +214,50 @@ def create_statesiniciales(*dicts, key):
 def Branch_and_Bound(*dicts, key):
   pq, mat = create_statesiniciales(*dicts, key=key)
   cotaGlobal = np.inf
-  tabla_original = expand(*dicts, keys=dicts[0].keys())
   distance_matrix = build_distance_matrix(list(dicts[0].keys()))
-    
+  current_state = pq.peek()  # Obtener y eliminar el elemento de mayor prioridad
+  orden = generar_combinaciones_pares(current_state.tabla)
+  nLetra = len(current_state.tabla)
+  num = list(dicts[0].keys())
+  posicion = num.index(key)
+  letra_a_indice = {letra: idx for idx, letra in enumerate(string.ascii_uppercase[:nLetra])}
+  dicts = current_state.tabla
+
+  tabla_original = expand(*dicts, keys=dicts[0].keys())
+
+  
   while not pq.is_empty():
-    current_state = pq.peek()  # Obtener y eliminar el elemento de mayor prioridad
-    dicts = current_state.tabla
 
     if current_state.solucion:
         return current_state
 
-    nLetra = len(dicts)
-    letra_a_indice = {letra: idx for idx, letra in enumerate(string.ascii_uppercase[:nLetra])}
-    num = list(dicts[0].keys())
-    posicion = num.index(key)
+    for par in orden:
+        orden.remove(0)
+        tabla_a_modificar = current_state[letra_a_indice[par[0]]]
+        col_a_eliminar = letra_a_indice[par[1]]
+        tabla_modificada = condensar_y_restaurar_tabla(tabla_a_modificar, col_a_eliminar)
 
-    # Iterar sobre los cortes del estado actual
-    for par in current_state.cortes:
-        if par not in current_state.cortes:                    
-            tabla_a_modificar = dicts[letra_a_indice[par[0]]]
-            col_a_eliminar = letra_a_indice[par[1]]
-            tabla_modificada = condensar_y_restaurar_tabla(tabla_a_modificar, col_a_eliminar)
-            
-            tablas_para_expandir = [
-                tabla_modificada if i == letra_a_indice[par[0]] else dicts[i]
+    # Crear una nueva lista de tablas para la expansión, reemplazando la tabla modificada
+        tablas_para_expandir = [ tabla_modificada if i == letra_a_indice[par[0]] else dicts[i]
                 for i in range(nLetra)
             ]
+        tabla_expandido = expand(*tablas_para_expandir, keys=dicts[0].keys())
 
-            tabla_expandido = expand(*tablas_para_expandir, keys=dicts[0].keys())
-            filaO = tabla_original[posicion]
-            filaA = tabla_expandido[posicion]
-            emd_exacto = calculate_emd(filaO, filaA, distance_matrix)
+        # Obtener las filas expandidas
+        filaO = tabla_original[posicion]
+        filaA = tabla_expandido[posicion]
 
-            if emd_exacto < cotaGlobal:
-                new_state = State(peso=emd_exacto, tabla=tabla_expandido, cortes=current_state.cortes + [par])
-                pq.put(new_state)  # Añadir el nuevo estado a la cola de prioridad
+        emd_exacto = calculate_emd(filaO, filaA, distance_matrix)
 
-    return pq
+        if emd_exacto == 0.0:
+            dicts = tablas_para_expandir = [  tabla_modificada if i == letra_a_indice[par[0]] else dicts[i]
+            for i in range(nLetra)
+        ]
+        state = State(peso=emd_exacto, tabla=dicts, solucion=None, cortes=[par])
+        pq.push(state)
+
+    return
+
 
 
 # Imprimir contenido de la PriorityQueue
