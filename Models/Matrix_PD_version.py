@@ -134,7 +134,7 @@ def calcular_resultado(dict1, dict2, keys, key, cache):
     if '∅' in new_keys2:
         new_keys2 = []
 
-    dict3 = {chr(65 + i): i for i in range(len(new_keys1 + new_keys2))}
+    dict3 = {chr(65 + i): i for i in range(6)}
     all_letters = ''.join(dict3.keys()) + ' = ' + key
 
     if not new_keys1 and new_keys2:
@@ -192,6 +192,7 @@ def hamming_distance(bin1, bin2):
 
 def bottom_up(*dicts, key):
     combinaciones, combinacionesOP = obtener_cadena_valores("ABC/ABC")
+    # combinaciones, combinacionesOP = obtener_cadena_valores("ABCDEF/ABCDEF")
     menor = np.inf
     best_combination = ""
     best_dict = None
@@ -202,7 +203,13 @@ def bottom_up(*dicts, key):
 
     ordic2 = {}
     original, ordic = expand(dicts[0], dicts[1], dicts[2], keys=dicts[0].keys(), key=key)
+    # original, ordic = expand(dicts[0], dicts[1], dicts[2], dicts[3], keys=dicts[0].keys(), key=key)
+    # original, ordic = expand(dicts[0], dicts[1], dicts[2], dicts[3], dicts[4], dicts[5], keys=dicts[0].keys(), key=key)
+
+    # ordic2[f"ABCDEF = ", key] = ordic
     ordic2[f"ABC = ", key] = ordic
+    # ordic2[f"ABCD = ", key] = ordic
+    # ordic2[f"ABCD = ", key] = ordic
 
     pdox = pd.DataFrame.from_dict(ordic2).transpose()
     print("\nOriginal:\n\n", pdox) 
@@ -231,6 +238,7 @@ def bottom_up(*dicts, key):
                 break
     
     best_combination = best_combination.replace('000', '∅').replace('0', '')
+    # best_combination = best_combination.replace('000000', '∅').replace('0', '')
     # xd = best_combination.split('/')
     # xd[0] = xd[0].replace('B', 'C')
 
@@ -274,4 +282,5 @@ Cf = {
     '111': {'0': 1, '1': 0}
 }
 
-#bottom_up(Af, Bf, Cf, key='001')
+if __name__ == '__main__':
+    bottom_up(Af, Bf, Cf, key='001')
