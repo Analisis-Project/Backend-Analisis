@@ -227,8 +227,15 @@ def bottom_up(*dicts, key):
             menor = emd_distance
             best_combination = combinacion + " * " + combinacion_op
             best_dict = pdrx
+            if menor == 0:
+                break
     
-    best_combination = best_combination.replace('000', '∅').replace('0', '')
+    # best_combination = best_combination.replace('00', '∅').replace('0', '')
+    # xd = best_combination.split('/')
+    # xd[0] = xd[0].replace('B', 'C')
+
+    # best_combination = '/'.join(xd)
+
     print("\n\nMenor EMD: ", menor)
     print("Mejor combinación: ", best_combination)
     print("Mejor distribución:\n\n", best_dict)
