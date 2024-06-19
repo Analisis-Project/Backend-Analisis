@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import json
 
 def expand(*dicts, keys, key=None):
     n = 2**len(dicts)
@@ -203,6 +204,7 @@ def fuerza_bruta(*dicts, key):
     print("\n\nMenor EMD: ", menor)
     print("Mejor combinación: ", best_combination)
     print("Mejor distribución:\n\n", best_dict)
+    return pdox, menor, best_combination, best_dict
 
 Af = {
     '000': {'0': 1, '1': 0},
