@@ -3,19 +3,14 @@ import heapq
 import itertools
 import string
 from collections import defaultdict
-import Matrix_PD_version as mpd
 
 class State:
-    def __init__(self, peso, tabla, solucion=None, cortes=None):
+    def __init__(self, peso, tabla=None, solucion=None, cortes=None):
         self.peso = float(peso)
-        self.tabla = np.array(tabla)  # Convertir la tabla a un array NumPy
-        self.solucion = solucion or False  # Valor predeterminado: False si no se proporciona
+        self.tabla = tabla if tabla is not None else np.array([])  # Manejar adecuadamente la tabla        self.solucion = solucion or False  # Valor predeterminado: False si no se proporciona
         self.cortes = cortes or []  # Valor predeterminado: lista vacía si no se proporciona
+        self.solucion = solucion or False  # Valor predeterminado: False si no se proporciona
         
-        # Validación básica (puedes agregar más según tus necesidades)
-        if self.tabla.ndim != 2:
-            raise ValueError("La tabla debe ser una matriz bidimensional.")
-    
     def __lt__(self, other):
         return self.peso < other.peso
 
@@ -32,6 +27,9 @@ class PriorityQueue:
 
     def pop(self):
         return heapq.heappop(self.heap)[1]  # Devolvemos solo el objeto State
+    
+    def peek(self):
+        return self.heap[0][1]
 
     def is_empty(self):
         return len(self.heap) == 0
@@ -131,21 +129,6 @@ def generar_combinaciones_pares(num_letras):
     combinaciones = list(itertools.permutations(letras, 2))  # Convertir a lista
     return combinaciones
 
-
-
-# Función para obtener una fila específica del estado expandido
-def obtener_fila_expandida(estado_expandido, estado_clave):
-    if estado_clave not in estado_expandido:
-        raise KeyError(f"El estado clave '{estado_clave}' no se encuentra en estado_expandido.")
-    
-    # Obtener la distribución asociada con el estado_clave
-    distribucion = estado_expandido[estado_clave]
-
-    # Convertir la distribución a un array de NumPy
-    fila_expandida = np.array(list(distribucion.values()), dtype=np.float64)
-
-    return fila_expandida
-# Definir la tabla original
 A = {
     '000': {'0': 1, '1': 0},
     '100': {'0': 1, '1': 0},
@@ -186,6 +169,7 @@ def generar_combinaciones_pares(num_letras):
 
 def create_statesiniciales(*dicts, key):
     pq = PriorityQueue()
+    dict_names = ['A', 'B', 'C']
     nLetra = len(dicts)
     matrixad=np.zeros((nLetra,nLetra))
     tabla_original = expand(*dicts, keys=dicts[0].keys())
@@ -215,29 +199,30 @@ def create_statesiniciales(*dicts, key):
         emd_exacto = calculate_emd(filaO, filaA, distance_matrix)
 
         if emd_exacto == 0.0:
-            dicts = getIndividualMatrixes(tabla_expandido, nLetra)
-            print(dicts)
+            dicts = tablas_para_expandir = [
+            tabla_modificada if i == letra_a_indice[par[0]] else dicts[i]
+            for i in range(nLetra)
+        ]
             
 
         matrixad[letra_a_indice[par[0]], letra_a_indice[par[1]]] = emd_exacto       
-        state = State(peso=emd_exacto, tabla=tabla_expandido, solucion=None, cortes=[par])
-        print(state)
+        state = State(peso=emd_exacto, tabla=dicts, solucion=None, cortes=[par])
         pq.push(state)
     
     return pq , matrixad
 
 
-
-
+# Define tus funciones y clases auxiliares según sea necesario
 def Branch_and_Bound(*dicts, key):
-    pq  , mat= create_statesiniciales(*dicts, key=key)
-    #print(mat)
+    pq, mat = create_statesiniciales(*dicts, key=key)
+    print(mat)
     cotaGlobal = np.inf
     tabla_original = expand(*dicts, keys=dicts[0].keys())
     distance_matrix = build_distance_matrix(list(dicts[0].keys()))
-
+    
     while not pq.is_empty():
-        current_state = pq.pop()
+        current_state = pq.peek()  # Obtener y eliminar el elemento de mayor prioridad
+        dicts = current_state.tabla
 
         if current_state.solucion:
             return current_state
@@ -247,7 +232,8 @@ def Branch_and_Bound(*dicts, key):
         num = list(dicts[0].keys())
         posicion = num.index(key)
 
-        for par in generar_combinaciones_pares(nLetra):
+        # Iterar sobre los cortes del estado actual
+        for par in current_state.cortes:
             if par not in current_state.cortes:                    
                 tabla_a_modificar = dicts[letra_a_indice[par[0]]]
                 col_a_eliminar = letra_a_indice[par[1]]
@@ -265,19 +251,9 @@ def Branch_and_Bound(*dicts, key):
 
                 if emd_exacto < cotaGlobal:
                     new_state = State(peso=emd_exacto, tabla=tabla_expandido, cortes=current_state.cortes + [par])
-                    pq.push(new_state)
+                    pq.put(new_state)  # Añadir el nuevo estado a la cola de prioridad
 
     return pq
-
-def getIndividualMatrixes(dict, column_indices):
-    dicts = []
-    for index in range(column_indices):
-        aux_dict = dict
-        for index2 in range(column_indices, 0, -1):
-            if (index2 - 1) != index:
-                aux_dict = mpd.marginalize_column(aux_dict, index2 - 1)
-        dicts.append(aux_dict)
-    return dicts
 
 
 pq = Branch_and_Bound(A, B, C, key='100')
