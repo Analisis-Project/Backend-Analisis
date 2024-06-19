@@ -219,6 +219,7 @@ def bottom_up(*dicts, key):
     print("\n\nMenor EMD: ", menor)
     print("Mejor combinación: ", best_combination)
     print("Mejor distribución:\n\n", best_dict)
+    return pdox, menor, best_combination, best_dict
 
 Af = {
     '000': {'0': 1, '1': 0},
