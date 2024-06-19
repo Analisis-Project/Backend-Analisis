@@ -171,13 +171,13 @@ def create_statesiniciales(*dicts, key):
     pq = PriorityQueue()
     dict_names = ['A', 'B', 'C']
     nLetra = len(dicts)
-    matrixad=np.zeros((nLetra,nLetra))
     tabla_original = expand(*dicts, keys=dicts[0].keys())
     distance_matrix = build_distance_matrix(list(dicts[0].keys()))  # Usamos las claves de la primera tabla
     num = list(dicts[0].keys())
     posicion = num.index(key)
     orden = generar_combinaciones_pares(nLetra)
     letra_a_indice = {letra: idx for idx, letra in enumerate(string.ascii_uppercase[:nLetra])}
+    matrixad = np.zeros((nLetra, nLetra), dtype=np.float64)
 
     for par in orden:
         tabla_a_modificar = dicts[letra_a_indice[par[0]]]
@@ -209,8 +209,17 @@ def create_statesiniciales(*dicts, key):
         state = State(peso=emd_exacto, tabla=dicts, solucion=None, cortes=[par])
         pq.push(state)
     
-    return pq , matrixad
+    return pq
 
+def obtener_fila_expandida(estado_expandido, estado_clave):
+    print("ssss",estado_expandido)
+    if estado_clave not in estado_expandido:
+        raise KeyError(f"El estado clave '{estado_clave}' no se encuentra en estado_expandido.")
+    
+    # Obtener la distribución asociada con el estado_clave
+    distribucion = estado_expandido[estado_clave]
+    # Convertir la distribución a un array de NumPy
+    fila_expandida = np.array(list(distribucion.values()), dtype=np.float64)
 
 # Define tus funciones y clases auxiliares según sea necesario
 def Branch_and_Bound(*dicts, key):
@@ -256,11 +265,20 @@ def Branch_and_Bound(*dicts, key):
     return pq
 
 
-pq = Branch_and_Bound(A, B, C, key='100')
+# Imprimir contenido de la PriorityQueue
+while not pq.is_empty():
+    state = pq.pop()
+    print("____________________")
+    print(state)
 
-#ab=condensar_y_restaurar_tabla(B, 0)
-#abc=condensar_y_restaurar_tabla(ab, 2)
+# Ejemplo de estados (filas) y distribuciones filaO y filaA
 
-#tabla =expand(A, abc, C, keys=A.keys())
-#print(tabla)
+filaO = np.array([0, 0, 0, 0, 1, 0, 0, 0], dtype=np.float64)  # Ejemplo de distribución filaO
+filaA = np.array([0, 0, 0, 0, 0.25, 0.75, 0, 0], dtype=np.float64)  # Ejemplo de distribución filaA
 
+# Construir la matriz de distancia usando la distancia Hamming
+#distance_matrix = build_distance_matrix(states)
+
+# Calcular el EMD entre filaO y filaA utilizando la matriz de distancia
+#emd_exacto = calculate_emd(filaO, filaA, distance_matrix)
+#print(f"EMD Exacto: {emd_exacto}")

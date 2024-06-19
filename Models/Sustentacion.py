@@ -6,38 +6,33 @@ def subsystem(dict, subsystem):
     column_indices = [i for i, c in enumerate(subsystem.split('/')[0]) if c == '0']
     row_indices = [i for i, c in enumerate(subsystem.split('/')[1]) if c == '0']
 
-    new_dict2 = dict
-    new_dict2 = mpd.marginalize_column(new_dict2, 3)
-
     for index in sorted(column_indices, reverse=True):
         dict = mpd.marginalize_column(dict, index)
     
     new_dict = dict
     keys = list(dict.keys())
-
     
     for index in sorted(row_indices, reverse=True):
         aux_dict = {}
-        aux_dict2 = {}
         for key in keys:
             if key[index] == '0':
                 aux_dict[key[:index] + key[index + 1:]] = new_dict[key]
-                aux_dict2[key[:index] + key[index + 1:]] = new_dict2[key]
         keys = list(aux_dict.keys())
         new_dict = aux_dict
-        new_dict2 = aux_dict2
 
     PD_dict = pd.DataFrame(new_dict).transpose()
+    print("Subsistema\n")
     print(PD_dict)
 
     column_indices = sum(1 for caracter in subsystem.split('/')[0] if caracter != '0')
 
-    dicts = getIndividualMatrixes(new_dict2, 3)
+    dicts = getIndividualMatrixes(new_dict, column_indices)
 
-    print("\n")
-
+    print("\nIndividuales\n")
     for dict in dicts:
         pd_dict = pd.DataFrame(dict).transpose()
+        print(pd_dict)
+        print("\n")
 
     return new_dict, dicts
 
@@ -71,6 +66,7 @@ ABCD = {
 }
 
 PD_ABCD = pd.DataFrame(ABCD).transpose()
+print("Matriz completa\n")
 print(PD_ABCD)
 print("\n\n\n")
 
@@ -79,7 +75,7 @@ new_dict, dicts = subsystem(ABCD, 'ABC0/ABC0')
 mpd.bottom_up(dicts[0], dicts[1], dicts[2], key = '100')
 
 # new_dict, dicts = subsystem(ABCD, 'A0C0/AB00')
-# mpd.bottom_up(dicts[0], dicts[1], dicts[2], key = '10')
+# mpd.bottom_up(dicts[0], dicts[1], key = '10')
 
 # new_dict, dicts = subsystem(ABCD, 'A0C0/ABC0')
-# mpd.bottom_up(dicts[0], dicts[1], dicts[2], key = '100')
+# mpd.bottom_up(dicts[0], dicts[1], key = '100')
