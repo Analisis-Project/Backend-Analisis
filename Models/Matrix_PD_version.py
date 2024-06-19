@@ -230,7 +230,7 @@ def bottom_up(*dicts, key):
             if menor == 0:
                 break
     
-    # best_combination = best_combination.replace('00', '∅').replace('0', '')
+    best_combination = best_combination.replace('000', '∅').replace('0', '')
     # xd = best_combination.split('/')
     # xd[0] = xd[0].replace('B', 'C')
 
