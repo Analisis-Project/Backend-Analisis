@@ -3,6 +3,7 @@ import heapq
 import itertools
 import string
 from collections import defaultdict
+import Matrix_PD_version as mpd
 
 class State:
     def __init__(self, peso, tabla, solucion=None, cortes=None):
@@ -130,39 +131,7 @@ def generar_combinaciones_pares(num_letras):
     combinaciones = list(itertools.permutations(letras, 2))  # Convertir a lista
     return combinaciones
 
-def create_statesiniciales(*dicts, key):
-    pq = PriorityQueue()
-    nLetra = len(dicts)
-    tabla_original = expand(*dicts, keys=dicts[0].keys())
-    states = list(dicts[0].keys())  # Obtener los estados de la primera tabla
-    #obtener la poscision del estdo en el diccionario
 
-    num = states["000"]
-    print(num)
-    
-    distance_matrix = build_distance_matrix(states)
-    orden = generar_combinaciones_pares(nLetra)
-    letra_a_indice = {letra: idx for idx, letra in enumerate(string.ascii_uppercase[:nLetra])}
-
-    for par in orden:
-        tabla_a_modificar = dicts[letra_a_indice[par[0]]]
-        col_a_eliminar = letra_a_indice[par[1]]
-        tabla_modificada = condensar_y_restaurar_tabla(tabla_a_modificar, col_a_eliminar)
-        
-        # Crear una nueva lista de tablas para la expansión, reemplazando la tabla modificada
-        tablas_para_expandir = [
-            tabla_modificada if i == letra_a_indice[par[0]] else dicts[i]
-            for i in range(nLetra)
-        ]
-
-        tabla_expandido = expand(*tablas_para_expandir, keys=dicts[0].keys())
-
-        emd_exacto = calculate_emd(filaO, filaA, distance_matrix)
-
-        state = State(peso=emd_exacto, tabla=tabla_expandido, solucion=None, cortes=[par])
-        pq.push(state)
-    
-    return pq
 
 # Función para obtener una fila específica del estado expandido
 def obtener_fila_expandida(estado_expandido, estado_clave):
@@ -218,6 +187,7 @@ def generar_combinaciones_pares(num_letras):
 def create_statesiniciales(*dicts, key):
     pq = PriorityQueue()
     nLetra = len(dicts)
+    matrixad=np.zeros((nLetra,nLetra))
     tabla_original = expand(*dicts, keys=dicts[0].keys())
     distance_matrix = build_distance_matrix(list(dicts[0].keys()))  # Usamos las claves de la primera tabla
     num = list(dicts[0].keys())
@@ -241,60 +211,80 @@ def create_statesiniciales(*dicts, key):
         # Obtener las filas expandidas
         filaO = tabla_original[posicion]
         filaA = tabla_expandido[posicion]
-        print("filaO")
-        print(filaO)
-        print("filaA")
-        print(filaA)
+ 
         emd_exacto = calculate_emd(filaO, filaA, distance_matrix)
 
+        if emd_exacto == 0.0:
+            dicts = getIndividualMatrixes(tabla_expandido, nLetra)
+            print(dicts)
+            
+
+        matrixad[letra_a_indice[par[0]], letra_a_indice[par[1]]] = emd_exacto       
         state = State(peso=emd_exacto, tabla=tabla_expandido, solucion=None, cortes=[par])
+        print(state)
         pq.push(state)
     
-    return pq
+    return pq , matrixad
 
-def obtener_fila_expandida(estado_expandido, estado_clave):
-    print("ssss",estado_expandido)
-    if estado_clave not in estado_expandido:
-        raise KeyError(f"El estado clave '{estado_clave}' no se encuentra en estado_expandido.")
-    
-    # Obtener la distribución asociada con el estado_clave
-    distribucion = estado_expandido[estado_clave]
-    # Convertir la distribución a un array de NumPy
-    fila_expandida = np.array(list(distribucion.values()), dtype=np.float64)
 
-    return fila_expandida
 
 
 def Branch_and_Bound(*dicts, key):
-    pq = PriorityQueue()
-    nLetra = len(dicts)
-    orden = generar_combinaciones_pares(nLetra)
-    # Implementar lógica de Branch and Bound aquí
+    pq  , mat= create_statesiniciales(*dicts, key=key)
+    #print(mat)
+    cotaGlobal = np.inf
+    tabla_original = expand(*dicts, keys=dicts[0].keys())
+    distance_matrix = build_distance_matrix(list(dicts[0].keys()))
+
+    while not pq.is_empty():
+        current_state = pq.pop()
+
+        if current_state.solucion:
+            return current_state
+
+        nLetra = len(dicts)
+        letra_a_indice = {letra: idx for idx, letra in enumerate(string.ascii_uppercase[:nLetra])}
+        num = list(dicts[0].keys())
+        posicion = num.index(key)
+
+        for par in generar_combinaciones_pares(nLetra):
+            if par not in current_state.cortes:                    
+                tabla_a_modificar = dicts[letra_a_indice[par[0]]]
+                col_a_eliminar = letra_a_indice[par[1]]
+                tabla_modificada = condensar_y_restaurar_tabla(tabla_a_modificar, col_a_eliminar)
+                
+                tablas_para_expandir = [
+                    tabla_modificada if i == letra_a_indice[par[0]] else dicts[i]
+                    for i in range(nLetra)
+                ]
+
+                tabla_expandido = expand(*tablas_para_expandir, keys=dicts[0].keys())
+                filaO = tabla_original[posicion]
+                filaA = tabla_expandido[posicion]
+                emd_exacto = calculate_emd(filaO, filaA, distance_matrix)
+
+                if emd_exacto < cotaGlobal:
+                    new_state = State(peso=emd_exacto, tabla=tabla_expandido, cortes=current_state.cortes + [par])
+                    pq.push(new_state)
+
     return pq
 
-pq = create_statesiniciales(A, B, C, key='100')
+def getIndividualMatrixes(dict, column_indices):
+    dicts = []
+    for index in range(column_indices):
+        aux_dict = dict
+        for index2 in range(column_indices, 0, -1):
+            if (index2 - 1) != index:
+                aux_dict = mpd.marginalize_column(aux_dict, index2 - 1)
+        dicts.append(aux_dict)
+    return dicts
 
-ss=condensar_y_restaurar_tabla(A, 1)
-estado_expandido = expand(ss,B,C, keys=A.keys())
-#fila1=estado_expandido["000"]
 
-#print(fila1)
+pq = Branch_and_Bound(A, B, C, key='100')
 
+#ab=condensar_y_restaurar_tabla(B, 0)
+#abc=condensar_y_restaurar_tabla(ab, 2)
 
-# Imprimir contenido de la PriorityQueue
-while not pq.is_empty():
-    state = pq.pop()
-    print("____________________")
-    print(state)
+#tabla =expand(A, abc, C, keys=A.keys())
+#print(tabla)
 
-# Ejemplo de estados (filas) y distribuciones filaO y filaA
-
-filaO = np.array([0, 0, 0, 0, 1, 0, 0, 0], dtype=np.float64)  # Ejemplo de distribución filaO
-filaA = np.array([0, 0, 0, 0, 0.25, 0.75, 0, 0], dtype=np.float64)  # Ejemplo de distribución filaA
-
-# Construir la matriz de distancia usando la distancia Hamming
-#distance_matrix = build_distance_matrix(states)
-
-# Calcular el EMD entre filaO y filaA utilizando la matriz de distancia
-#emd_exacto = calculate_emd(filaO, filaA, distance_matrix)
-#print(f"EMD Exacto: {emd_exacto}")
