@@ -144,32 +144,19 @@ for i in range (num_combinaciones):
     for j in range(num_combinaciones):
         ABCDEF[list(six_nodes_combinations.keys())[i]][list(six_nodes_combinations.keys())[j]] = sixnodes[i][j]
 
+
+# PD_ABCD = pd.DataFrame(ABCD).transpose()
+# print("\nMatriz completa\n")
+# print(PD_ABCD)
+# print("\n\n")
+
 PD_ABCDEF = pd.DataFrame(ABCDEF).transpose()
+print("\nMatriz completa\n")
 print(PD_ABCDEF)
+print("\n\n")
 
-PD_ABCD = pd.DataFrame(ABCD).transpose()
-print("Matriz completa\n")
-print(PD_ABCD)
-print("\n\n\n")
-
-# key completa = 1000
 # new_dict, dicts = subsystem(ABCD, 'ABC0/ABC0')
-# mpd.bottom_up(dicts[0], dicts[1], dicts[2], key = '100')                      Funciona
+# mpd.bottom_up(dicts, key = '100', letters='ABC0/ABC0')                      
 
-# new_dict, dicts = subsystem(ABCD, 'ABCD/ABCD')
-# mpd.bottom_up(dicts[0], dicts[1], dicts[2], dicts[3], key = '1000')           Funciona
-
-# new_dict, dicts = subsystem(ABCD, 'A0C0/AB00')
-# mpd.bottom_up(dicts[0], dicts[1], dicts[2], key = '10')                       Funciona   
-
-# new_dict, dicts = subsystem(ABCD, 'ABC0/ABCD')
-# mpd.bottom_up(dicts[0], dicts[1], dicts[2], key = '1000')  
-
-# new_dict, dicts = subsystem(ABCD, 'A0C0/ABC0')
-# mpd.bottom_up(dicts[0], dicts[1], key = '100')
-
-# new_dict, dicts = subsystem(ABCDEF, 'ABCDEF/ABCDEF')
-# mpd.bottom_up(dicts[0], dicts[1], dicts[2], dicts[3], dicts[4], dicts[5], key = '100000')  
-
-new_dict, dicts = subsystem(ABCDEF, 'AB000F/AB0D00')
-mpd.bottom_up(dicts[0], dicts[1], dicts[2], key = '100')                       
+new_dict, dicts = subsystem(ABCDEF, '0BCDEF/AB00EF')
+mpd.bottom_up(dicts, key = '1000', letters='0BCDEF/AB00EF')                     
