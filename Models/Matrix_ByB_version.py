@@ -7,10 +7,10 @@ from collections import defaultdict
 
 
 class State:
-    def __init__(self, peso, tabla=None, solucion=None, cortes=None):
+    def __init__(self, peso, tabla=None, solucion=None, cortes=None, hijosState=None):
         self.peso = float(peso)
         self.tabla = (
-            tabla if tabla is not None else np.array([])
+            tabla or []
         )  # Manejar adecuadamente la tabla        self.solucion = solucion or False  # Valor predeterminado: False si no se proporciona
         self.cortes = (
             cortes or []
@@ -18,7 +18,7 @@ class State:
         self.solucion = (
             solucion or False
         )  # Valor predeterminado: False si no se proporciona
-
+        self.hijosState = hijosState or []
     def __lt__(self, other):
         return self.peso < other.peso
 
@@ -63,6 +63,25 @@ class PriorityQueue:
 
     def get_all_states(self):
         return [state for _, state in self.heap]
+
+    class PriorityQueueWrapper:
+        def __init__(self):
+            self.pq = PriorityQueue()
+
+        def is_empty(self):
+            return self.pq.empty()
+
+        def put(self, state):
+            self.pq.put(state)
+
+        def get(self):
+            return self.pq.get()
+
+        def peek(self):
+            return self.pq.queue[0] if not self.is_empty() else None
+
+        def get_all_states(self):
+            return list(self.pq.queue)
 
 
 def isBipartite(adj_matrix):
@@ -306,7 +325,7 @@ def create_statesiniciales(*dicts, key):
         matriz_objeto = MatrizBipartita(matrixad)
 
         state = State(peso=emd_exacto, tabla=dicts, solucion=None, cortes=[par])
-        print(state.tabla)
+        # print(state.cortes)
         pq.push(state)
 
     return pq, matriz_objeto  # Devolver la cola de prioridad y la matriz de objetos
@@ -315,73 +334,84 @@ def create_statesiniciales(*dicts, key):
 # Define tus funciones y clases auxiliares según sea necesario
 def Branch_and_Bound(*dicts, key):
     pq, mat = create_statesiniciales(*dicts, key=key)
-    cotaGlobal = np.inf
-    distance_matrix = build_distance_matrix(list(dicts[0].keys()))
-    nLetra = len(dicts)
-    orden = generar_combinaciones_pares(nLetra)
-    num = list(dicts[0].keys())
-    posicion = num.index(key)
+    cotaGlobal = np.inf  # cota global inicializada en infinito
+
+    distance_matrix = build_distance_matrix(list(dicts[0].keys()))  # Matriz de distancias
+
+    nLetra = len(dicts)  # Número de letras
+
+    orden = generar_combinaciones_pares(nLetra)  # Generar combinaciones de pares
+
+    num = list(dicts[0].keys())  # Lista de claves
+    posicion = num.index(key)   # Posición de la clave que entra
+
     letra_a_indice = {
-        letra: idx for idx, letra in enumerate(string.ascii_uppercase[:nLetra])
+        letra: idx for idx, letra in enumerate(string.ascii_uppercase[:nLetra])  # Diccionario de letras a índices
     }
+    
     lista = []
     todos_los_cortes = []
-    pq_copy = pq.get_all_states()
+    pq_copy = pq.get_all_states()  # Copia de la cola de prioridad
+
+    soluciones = []  # Lista de soluciones encontradas
 
     for i in pq_copy:
-        lista.append(i.cortes[0])
+        lista.append(i.cortes[0])  # Lista de cortes en general y orden
+    
+    while not pq.is_empty():  # Mientras la cola de prioridad no esté vacía
 
+        current_state = pq.peek()  # Obtener el estado actual de la cola de prioridad (mayor prioridad)
 
-    current_state = pq.peek()  # Obtener el estado actual
+        if current_state.solucion:  # Si es una solución
+            soluciones.append((current_state.peso, current_state.cortes))  # Agregar a la lista de soluciones
 
-    orden = [x for x in lista if x not in current_state.cortes]
+        orden = [x for x in lista if x not in current_state.cortes]  # Orden de los cortes
 
-    while not pq.is_empty():
+        for par in orden:  # Para cada par en el orden
 
-        current_state = pq.peek()  # Obtener el estado actual
-        tabla_original = expand(current_state.tabla, keys=dicts[0].keys())
-
-        if current_state.solucion:
-            pq.pop()
-            current_state = pq.peek()
-            return current_state
-
-        for par in orden:
-            tabla_a_modificar = current_state.tabla[letra_a_indice[par[0]]]
+            tabla_a_modificar = current_state.tabla[letra_a_indice[par[0]]]  # Tabla a modificar
             col_a_eliminar = letra_a_indice[par[1]]
+            tabla_modificada = condensar_y_restaurar_tabla(tabla_a_modificar, col_a_eliminar)
 
-            tabla_modificada = condensar_y_restaurar_tabla(
-                tabla_a_modificar, col_a_eliminar
-            )
-            print(tabla_modificada)
-            #     # Crear una nueva lista de tablas para la expansión, reemplazando la tabla modificada
             tablas_para_expandir = [
-                tabla_modificada if i == letra_a_indice[par[0]] else dicts[i]
+                tabla_modificada if i == letra_a_indice[par[0]] else current_state.tabla[i]
                 for i in range(nLetra)
             ]
-            tabla_expandido = expand(*dicts, keys=dicts[0].keys())
+
+            tabla_expandido = expand(*tablas_para_expandir, keys=dicts[0].keys())
+
+            tablas_para_expandir_o = [
+                current_state.tabla[i] if i == letra_a_indice[par[0]] else current_state.tabla[i]
+                for i in range(nLetra)
+            ]
+            tabla_original = expand(*tablas_para_expandir_o, keys=dicts[0].keys())
 
             filaO = tabla_original[posicion]
             filaA = tabla_expandido[posicion]
 
             emd_exacto = calculate_emd(filaO, filaA, distance_matrix)
+            mat.actualizar_matriz(letra_a_indice[par[1]], letra_a_indice[par[0]], 0)
 
-            dicts = tablas_para_expandir = [
-                tabla_modificada if i == letra_a_indice[par[0]] else dicts[i]
-                for i in range(nLetra)
-            ]
+            ncomponents, n = connectedComponents(mat.matriz_binaria)
 
-            mat.actualizar_matriz(letra_a_indice[par[1]], letra_a_indice[par[0]],0)
-            if emd_exacto < cotaGlobal and connectedComponents(mat) == 2:
-                cotaGlobal = emd_exacto
-                # Actualizar el estado actual
-                current_state.peso = emd_exacto
-                current_state.tabla = dicts
-                current_state.cortes.append(par)
-                pq.pop()  # Remover el estado actual de la cola
-                pq.push(current_state)  # Reinserir el estado actualizado
+            if ncomponents == 2:
+                if emd_exacto < cotaGlobal:
+                    cotaGlobal = emd_exacto
+                    soluciones.append((current_state.peso, current_state.cortes[:]))
+                    current_state.tabla = tablas_para_expandir_o
+                    mat.actualizar_matriz(letra_a_indice[par[1]], letra_a_indice[par[0]], emd_exacto)
+                    print(soluciones)
+                    
+            else:
+                current_state.peso += emd_exacto 
+                current_state.tabla = tablas_para_expandir
+                mat.actualizar_matriz(letra_a_indice[par[1]], letra_a_indice[par[0]], emd_exacto)
+            
 
-    return None
+        pq.pop()
+        current_state.cortes = [par for par in current_state.cortes if par in orden]
+
+    return soluciones
 
 
 # Imprimir contenido de la PriorityQueue
