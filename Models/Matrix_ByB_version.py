@@ -2,6 +2,7 @@ import numpy as np
 import heapq
 import itertools
 import string
+from collections import deque
 from collections import defaultdict
 
 
@@ -26,6 +27,24 @@ class State:
         return f"Problema de Optimización:\nPeso: {self.peso}\nTabla:\n{self.tabla}\nSolución: {self.solucion}\nCortes: {self.cortes}"
 
 
+class MatrizBipartita:
+    def __init__(self, matriz):
+        self.matriz_original = matriz
+        self.matriz_binaria = self.convertir_a_matriz_binaria(matriz)
+
+    def convertir_a_matriz_binaria(self, matriz):
+        matriz_binaria = [[1 if valor != 0 else 0 for valor in fila] for fila in matriz]
+        return matriz_binaria
+
+    def actualizar_matriz(self, fila, columna, valor):
+        self.matriz_original[fila][columna] = valor
+        self.matriz_binaria = self.convertir_a_matriz_binaria(self.matriz_original)
+
+    def __str__(self):
+        # Para imprimir la matriz binaria
+        return "\n".join([" ".join(map(str, fila)) for fila in self.matriz_binaria])
+
+
 class PriorityQueue:
     def __init__(self):
         self.heap = []
@@ -44,6 +63,54 @@ class PriorityQueue:
 
     def get_all_states(self):
         return [state for _, state in self.heap]
+
+
+def isBipartite(adj_matrix):
+    n = len(adj_matrix)
+    color = [-1] * n  # -1 means uncolored
+
+    for start_node in range(n):
+        if color[start_node] == -1:  # Node is not colored
+            queue = deque([start_node])
+            color[start_node] = 0  # Start coloring with 0
+
+            while queue:
+                current = queue.popleft()
+                current_color = color[current]
+                next_color = 1 - current_color
+
+                for neighbor in range(n):
+                    if adj_matrix[current][neighbor] == 1:  # There is an edge
+                        if color[neighbor] == -1:
+                            color[neighbor] = next_color
+                            queue.append(neighbor)
+                        elif color[neighbor] == current_color:
+                            return False
+    return True
+
+
+def connectedComponents(adj_matrix):
+    def dfs(node_id, visited, component_id):
+        stack = [node_id]
+        visited[node_id] = component_id
+
+        while stack:
+            node = stack.pop()
+            for neighbor in range(len(adj_matrix)):
+                if adj_matrix[node][neighbor] == 1 and visited[neighbor] == -1:
+                    visited[neighbor] = component_id
+                    stack.append(neighbor)
+
+    n = len(adj_matrix)
+    visited = [-1] * n  # -1 means unvisited
+    component_count = 0
+
+    for node in range(n):
+        if visited[node] == -1:  # Node is not visited
+            component_count += 1
+            dfs(node, visited, component_count)
+
+    return component_count, visited  # Return number of components and their assignments
 
 
 def condensar_y_restaurar_tabla(Bf, eliminar_col):
@@ -234,30 +301,29 @@ def create_statesiniciales(*dicts, key):
                 for i in range(nLetra)
             ]
 
-        matrixad[letra_a_indice[par[0]], letra_a_indice[par[1]]] = emd_exacto
+        matrixad[letra_a_indice[par[1]], letra_a_indice[par[0]]] = emd_exacto
+
+        matriz_objeto = MatrizBipartita(matrixad)
+
         state = State(peso=emd_exacto, tabla=dicts, solucion=None, cortes=[par])
-        # print(state)
+        print(state.tabla)
         pq.push(state)
 
-    return pq, matrixad
+    return pq, matriz_objeto  # Devolver la cola de prioridad y la matriz de objetos
 
 
 # Define tus funciones y clases auxiliares según sea necesario
 def Branch_and_Bound(*dicts, key):
     pq, mat = create_statesiniciales(*dicts, key=key)
-    # print(mat)
-    cotaGlobal = np.inf  # Cota global
-    distance_matrix = build_distance_matrix(
-        list(dicts[0].keys())
-    )  # para buscar las distancia
+    cotaGlobal = np.inf
+    distance_matrix = build_distance_matrix(list(dicts[0].keys()))
     nLetra = len(dicts)
-    orden = generar_combinaciones_pares(nLetra)  # generar combinaciones de letras
-    num = list(dicts[0].keys())  # obtener las claves de la primera tabla
-    posicion = num.index(key)  # obtener la posicion de la clave
+    orden = generar_combinaciones_pares(nLetra)
+    num = list(dicts[0].keys())
+    posicion = num.index(key)
     letra_a_indice = {
         letra: idx for idx, letra in enumerate(string.ascii_uppercase[:nLetra])
-    }  # asignar un indice a cada letra
-    # print(dicts)
+    }
     lista = []
     todos_los_cortes = []
     pq_copy = pq.get_all_states()
@@ -265,8 +331,10 @@ def Branch_and_Bound(*dicts, key):
     for i in pq_copy:
         lista.append(i.cortes[0])
 
-    # orden = [x for x in lista if x not in current_state.cortes]
-    print(lista)
+
+    current_state = pq.peek()  # Obtener el estado actual
+
+    orden = [x for x in lista if x not in current_state.cortes]
 
     while not pq.is_empty():
 
@@ -275,10 +343,8 @@ def Branch_and_Bound(*dicts, key):
 
         if current_state.solucion:
             pq.pop()
-            current_states = pq.peek()
+            current_state = pq.peek()
             return current_state
-
-        orden = [x for x in lista if x not in current_state.cortes]
 
         for par in orden:
             tabla_a_modificar = current_state.tabla[letra_a_indice[par[0]]]
@@ -293,20 +359,20 @@ def Branch_and_Bound(*dicts, key):
                 tabla_modificada if i == letra_a_indice[par[0]] else dicts[i]
                 for i in range(nLetra)
             ]
-            tabla_expandido = expand(*tablas_para_expandir, keys=dicts[0].keys())
+            tabla_expandido = expand(*dicts, keys=dicts[0].keys())
 
             filaO = tabla_original[posicion]
             filaA = tabla_expandido[posicion]
 
             emd_exacto = calculate_emd(filaO, filaA, distance_matrix)
 
-            if emd_exacto == 0.0:
-                dicts = tablas_para_expandir = [
-                    tabla_modificada if i == letra_a_indice[par[0]] else dicts[i]
-                    for i in range(nLetra)
-                ]
+            dicts = tablas_para_expandir = [
+                tabla_modificada if i == letra_a_indice[par[0]] else dicts[i]
+                for i in range(nLetra)
+            ]
 
-            if emd_exacto < cotaGlobal:
+            mat.actualizar_matriz(letra_a_indice[par[1]], letra_a_indice[par[0]],0)
+            if emd_exacto < cotaGlobal and connectedComponents(mat) == 2:
                 cotaGlobal = emd_exacto
                 # Actualizar el estado actual
                 current_state.peso = emd_exacto
