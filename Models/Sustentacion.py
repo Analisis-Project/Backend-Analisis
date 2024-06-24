@@ -47,34 +47,44 @@ def getIndividualMatrixes(dict, column_indices):
         dicts.append(aux_dict)
     return dicts
 
+
+# ABC = systems.threeNodes()
 # ABCD = systems.fourNodes()
-# ABCDEF = systems.sixNodes()
+# ABCDE = systems.fiveNodes()
+ABCDEF = systems.sixNodes()
 # ABCDEFGH = systems.eigthNodes1()
 # ABCDEFGH = systems.eigthNodes2()
-ABCDEFGHIJ = systems.tenNodes()
+# ABCDEFGHIJ = systems.tenNodes()
 
 print("\nMatriz completa\n")
+# PD_ABC = pd.DataFrame(ABC).transpose()
+# print(PD_ABC)
+
 # PD_ABCD = pd.DataFrame(ABCD).transpose()
 # print(PD_ABCD)
 
-# PD_ABCDEF = pd.DataFrame(ABCDEF).transpose()
-# print(PD_ABCDEF)
+PD_ABCDEF = pd.DataFrame(ABCDEF).transpose()
+print(PD_ABCDEF)
 
 # PD_ABCDEFGH = pd.DataFrame(ABCDEFGH).transpose()
 # print(PD_ABCDEFGH)
 
-PD_ABCDEFGHIJ = pd.DataFrame(ABCDEFGHIJ).transpose()
-print(PD_ABCDEFGHIJ)
+# PD_ABCDEFGHIJ = pd.DataFrame(ABCDEFGHIJ).transpose()
+# print(PD_ABCDEFGHIJ)
 print("\n\n")
 
-# new_dict, dicts = subsystem(ABCD, 'ABC0/ABC0')
-# mpd.bottom_up(dicts, key = '100', letters='ABC0/ABC0')                      
+# mpd.bottom_up(ABC, key = '100', letters='ABC/ABC')
 
-# new_dict, dicts = subsystem(ABCDEF, '0BCDEF/AB00EF')
-# mpd.bottom_up(dicts, key = '1000', letters='0BCDEF/AB00EF')     
+# new_dict, dicts = subsystem(ABCD, 'ABC0/ABC0')
+# mpd.bottom_up(dicts, key = '100', letters='ABC0/ABC0')        
+ 
+# mpd.bottom_up(ABCDE, key = '10001', letters='ABCDE/ABCDE')              
+
+new_dict, dicts = subsystem(ABCDEF, '0BCDEF/AB00EF')
+mpd.bottom_up(dicts, key = '1000', letters='0BCDEF/AB00EF')     
 
 # new_dict, dicts = subsystem(ABCDEFGH, 'ABCDEFGH/ABCDEFGH')
 # mpd.bottom_up(dicts, key = '10000000', letters='ABCDEFGH/ABCDEFGH')       
 
-new_dict, dicts = subsystem(ABCDEFGHIJ, 'A0C0E0G0I0/0B0D0F0HIJ')
-mpd.bottom_up(dicts, key = '100000', letters='A0C0E0G0I0/0B0D0F0HIJ')         
+# new_dict, dicts = subsystem(ABCDEFGHIJ, 'A0C0E0G0I0/0B0D0F0HIJ')`
+# mpd.bottom_up(dicts, key = '100000', letters='A0C0E0G0I0/0B0D0F0HIJ')         `
