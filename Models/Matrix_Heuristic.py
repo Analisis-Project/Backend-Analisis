@@ -90,7 +90,7 @@ def obtener_cadena_valores(opcion):
     combinacionesOP = combinaciones[::-1]
     return combinaciones[1:-1], combinacionesOP[1:-1]
 
-def getDistribution(distribution_str, dicts, key, cache, row_map, col_map):
+def getDistribution(distribution_str, dicts, key, cache, row_map, col_map, conditions, actual):
     if (distribution_str, key) in cache:
         return cache[(distribution_str, key)]
     
@@ -105,6 +105,7 @@ def getDistribution(distribution_str, dicts, key, cache, row_map, col_map):
     cadenas = '/'.join(cadenas)
     
     selected_dicts = [dicts[col_map[key]] for key in new_keys_cols]
+    selected_condition = {key: conditions[key] for key in new_keys_cols}
     marginalize_indices = [i for i, c in enumerate(distribution_str.split('/')[1]) if c == '0']
 
     if new_keys_cols and not new_keys:
@@ -120,20 +121,66 @@ def getDistribution(distribution_str, dicts, key, cache, row_map, col_map):
             result = [1]
             rdict = {cadenas.replace('0', ''): {new_key: 1}}
         else:
-            if new_key not in selected_dicts[0]:
-                raise ValueError(f"Key '{new_key}' not found in dictionaries")
-            result, rdict = expand(selected_dicts, keys=selected_dicts[0].keys(), key=new_key)
-            rdict = {cadenas.replace('0', ''): rdict}
+            aux = 0
+            for i, value in enumerate(selected_condition.values()):
+                max_valor = max(selected_dicts[i][new_key].values())
+                maximo = [clave for clave, valor in selected_dicts[i][new_key].items() if valor == max_valor]
+                if(value in maximo):
+                    aux += 1
+            
+            if aux == len(selected_condition):
+                nose = 2
+            elif aux == 0:
+                nose = 0
+            else:
+                nose = 1
+            
+            if nose >= actual:
+                actual = nose
+                if new_key not in selected_dicts[0]:
+                    raise ValueError(f"Key '{new_key}' not found in dictionaries")
+                result, rdict = expand(selected_dicts, keys=selected_dicts[0].keys(), key=new_key)
+                rdict = {cadenas.replace('0', ''): rdict}
+            else:
+                cache[(distribution_str, key)] = (actual, None, None)
+                return actual, None, None
     else:
-        result, rdict = expand(selected_dicts, keys=selected_dicts[0].keys())
-        column_index = {format(i, '0' + str(len(selected_dicts)) + 'b')[::-1]: 0 for i in range(2 ** len(selected_dicts))}
-        for key in rdict:
-            for key2 in column_index:
-                column_index[key2] += rdict[key][key2] / len(rdict.keys())
-        rdict = {cadenas.replace('0', ''): column_index}
+        aux = 0
+        for i, value in enumerate(selected_condition.values()):
+            sum_0 = 0
+            sum_1 = 0
+            count = len(selected_dicts[i])
+            for key in selected_dicts[i]:
+                sum_0 += selected_dicts[i][key]['0']
+                sum_1 += selected_dicts[i][key]['1']
+                
+            average_dict = {'0': sum_0 / count, '1': sum_1 / count}
+            max_valor = max(average_dict.values())
+            maximo = [clave for clave, valor in average_dict.items() if valor == max_valor]
+            if(value in maximo):
+                aux += 1
+        
+        if aux == len(selected_condition):
+            nose = 2
+        elif aux == 0:
+            nose = 0
+        else:
+            nose = 1
 
-    cache[(distribution_str, key)] = (result, rdict)
-    return result, rdict
+        if nose >= actual:
+            actual = nose
+            result, rdict = expand(selected_dicts, keys=selected_dicts[0].keys())
+            column_index = {format(i, '0' + str(len(selected_dicts)) + 'b')[::-1]: 0 for i in range(2 ** len(selected_dicts))}
+            for key in rdict:
+                for key2 in column_index:
+                    column_index[key2] += rdict[key][key2] / len(rdict.keys())
+            rdict = {cadenas.replace('0', ''): column_index}
+        else:
+            cache[(distribution_str, key)] = (actual, None, None)
+            return actual, None, None
+
+    cache[(distribution_str, key)] = (actual, result, rdict)
+    return actual, result, rdict
 
 def calcular_resultado(dict1, dict2, keys, key, cache, row_map, col_map):
     cache_key = (dict_to_hashable(dict1), dict_to_hashable(dict2), key)
@@ -206,7 +253,36 @@ def calculate_emd(dist1, dist2, distance_matrix):
 def hamming_distance(bin1, bin2):
     return sum(c1 != c2 for c1, c2 in zip(bin1, bin2))
 
-def bottom_up(dicts, key, letters):
+def procesar_diccionario(dic):
+    nuevo_dic = {}
+    for clave, valor in dic.items():
+        # Contar la frecuencia de cada carácter en el valor
+        contador = {}
+        for char in valor:
+            if char in contador:
+                contador[char] += 1
+            else:
+                contador[char] = 1
+        
+        # Encontrar el carácter con la frecuencia máxima
+        max_frecuencia = max(contador.values())
+        max_caracteres = [k for k, v in contador.items() if v == max_frecuencia]
+        
+        # Si hay solo un carácter con la máxima frecuencia, actualizar el valor
+        if len(max_caracteres) == 1:
+            nuevo_dic[clave] = max_caracteres[0]
+    
+    return nuevo_dic
+
+def invertir_diccionario(dic):
+    invertido = {}
+    for clave, valor in dic.items():
+        if valor in invertido:
+            raise ValueError("Los valores no son únicos, no se puede invertir el diccionario.")
+        invertido[valor] = clave
+    return invertido
+
+def heuristic(dicts, key, letters, threshold=0.9):
     letters = letters.replace('0', '')
     combinaciones, combinacionesOP = obtener_cadena_valores(letters)
 
@@ -221,6 +297,10 @@ def bottom_up(dicts, key, letters):
     menor = np.inf
     best_partition = ""
     best_dict = None
+    actual1 = 0      # 0: bad, 1: regular, 2: good
+    actual2 = 0      # 0: bad, 1: regular, 2: good
+    conditions = {}
+    suma = 0
 
     num_combinaciones = 2 ** len(col_map)
     column_index = {
@@ -234,14 +314,36 @@ def bottom_up(dicts, key, letters):
 
     ordic2 = {}
     original, ordic = expand(dicts, keys=dicts[0].keys(), key=key)
-
+    
     dict_key = letters.split('/')[1] + " = " + key
     ordic2[dict_key] = ordic
 
     pdox = pd.DataFrame.from_dict(ordic2).transpose()
     print("\nOriginal:\n\n", pdox) 
 
-    values2 = pdox.iloc[0].values
+    # ordic['00001'] = 0.25
+    # ordic['00011'] = 0.25
+    # ordic['00101'] = 0.25
+    # ordic['00111'] = 0.25
+    ordenado = dict(sorted(ordic.items(), key=lambda item: item[1], reverse=True))
+    ordenado = list(ordenado.items())
+
+    i = 0
+    while suma < threshold:
+        clave, valor = ordenado[i]
+        if valor == 0:
+            break
+        suma += valor
+        i += 1
+        for j, let in enumerate(clave):
+            if j in conditions:
+                conditions[j] += let
+            else:
+                conditions[j] = let
+
+    conditions = procesar_diccionario(conditions)
+    inverted = invertir_diccionario(col_map)
+    nuevo_diccionario = {inverted[key]: value for key, value in conditions.items()}
 
     for i, keyy in enumerate(keys):
         for j, key2 in enumerate(keys):
@@ -250,29 +352,30 @@ def bottom_up(dicts, key, letters):
     cache = {}
 
     for combinacion, combinacion_op in zip(combinaciones, combinacionesOP):
-        result1, d1 = getDistribution(combinacion, dicts, key=key, cache=cache, row_map=row_map, col_map=col_map)
-        result2, d2 = getDistribution(combinacion_op, dicts, key=key, cache=cache, row_map=row_map, col_map=col_map)
-        rx, letters = calcular_resultado(d1, d2, keys.keys(), key=key, cache=cache, row_map=row_map, col_map=col_map)
-        pdrx = pd.DataFrame.from_dict(rx).transpose()
-        values1 = pdrx.iloc[0].values
-        emd_distance = calculate_emd(values1, values2, distance_matrix)
+        actual1, result1, d1 = getDistribution(combinacion, dicts, key=key, cache=cache, row_map=row_map, col_map=col_map, conditions=nuevo_diccionario, actual=actual1)
+        actual2, result2, d2 = getDistribution(combinacion_op, dicts, key=key, cache=cache, row_map=row_map, col_map=col_map, conditions=nuevo_diccionario, actual=actual2)
+        if result1 is not None and result2 is not None:
+            rx, letters = calcular_resultado(d1, d2, keys.keys(), key=key, cache=cache, row_map=row_map, col_map=col_map)
+            pdrx = pd.DataFrame.from_dict(rx).transpose()
+            values1 = pdrx.iloc[0].values
+            emd_distance = calculate_emd(values1, original, distance_matrix)
 
-        if emd_distance < menor:
-            menor = emd_distance
+            if emd_distance < menor:
+                menor = emd_distance
 
-            combinacion = combinacion.split('/')
-            combinacion[0] = combinacion[0].replace(empty_col, '∅')
-            combinacion[1] = combinacion[1].replace(empty_row, '∅')
-            combinacion = '/'.join(combinacion)
-            combinacion_op = combinacion_op.split('/')
-            combinacion_op[0] = combinacion_op[0].replace(empty_col, '∅')
-            combinacion_op[1] = combinacion_op[1].replace(empty_row, '∅')
-            combinacion_op = '/'.join(combinacion_op)
+                combinacion = combinacion.split('/')
+                combinacion[0] = combinacion[0].replace(empty_col, '∅')
+                combinacion[1] = combinacion[1].replace(empty_row, '∅')
+                combinacion = '/'.join(combinacion)
+                combinacion_op = combinacion_op.split('/')
+                combinacion_op[0] = combinacion_op[0].replace(empty_col, '∅')
+                combinacion_op[1] = combinacion_op[1].replace(empty_row, '∅')
+                combinacion_op = '/'.join(combinacion_op)
 
-            best_partition = combinacion + " * " + combinacion_op
-            best_dict = pdrx
-            if menor == 0:
-                break
+                best_partition = combinacion + " * " + combinacion_op
+                best_dict = pdrx
+                if menor == 0:
+                    break
     
     best_partition = best_partition.replace('0', '')
 

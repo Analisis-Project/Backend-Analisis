@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
 import Matrix_PD_version as mpd
+import Matrix_Heuristic as mhd
 import Systems as systems
+import time
 
 def subsystem(dict, subsystem):
     column_indices = [i for i, c in enumerate(subsystem.split('/')[0]) if c == '0']
@@ -51,9 +53,9 @@ def getIndividualMatrixes(dict, column_indices):
 # ABC = systems.threeNodes()
 # ABCD = systems.fourNodes()
 # ABCDE = systems.fiveNodes()
-ABCDEF = systems.sixNodes()
+# ABCDEF = systems.sixNodes()
 # ABCDEFGH = systems.eigthNodes1()
-# ABCDEFGH = systems.eigthNodes2()
+ABCDEFGH = systems.eigthNodes2()
 # ABCDEFGHIJ = systems.tenNodes()
 
 print("\nMatriz completa\n")
@@ -63,11 +65,11 @@ print("\nMatriz completa\n")
 # PD_ABCD = pd.DataFrame(ABCD).transpose()
 # print(PD_ABCD)
 
-PD_ABCDEF = pd.DataFrame(ABCDEF).transpose()
-print(PD_ABCDEF)
+# PD_ABCDEF = pd.DataFrame(ABCDEF).transpose()
+# print(PD_ABCDEF)
 
-# PD_ABCDEFGH = pd.DataFrame(ABCDEFGH).transpose()
-# print(PD_ABCDEFGH)
+PD_ABCDEFGH = pd.DataFrame(ABCDEFGH).transpose()
+print(PD_ABCDEFGH)
 
 # PD_ABCDEFGHIJ = pd.DataFrame(ABCDEFGHIJ).transpose()
 # print(PD_ABCDEFGHIJ)
@@ -80,11 +82,27 @@ print("\n\n")
  
 # mpd.bottom_up(ABCDE, key = '10001', letters='ABCDE/ABCDE')              
 
-new_dict, dicts = subsystem(ABCDEF, '0BCDEF/AB00EF')
-mpd.bottom_up(dicts, key = '1000', letters='0BCDEF/AB00EF')     
+# new_dict, dicts = subsystem(ABCDEF, 'ABCDEF/ABCDEF')
 
-# new_dict, dicts = subsystem(ABCDEFGH, 'ABCDEFGH/ABCDEFGH')
-# mpd.bottom_up(dicts, key = '10000000', letters='ABCDEFGH/ABCDEFGH')       
+# inicioH = time.time()
+# mhd.heuristic(dicts, key = '100000', letters='ABCDEF/ABCDEF')
+# finH = time.time()
+# inicioPD = time.time()
+# mpd.bottom_up(dicts, key = '100000', letters='ABCDEF/ABCDEF')     
+# finPD = time.time()
 
-# new_dict, dicts = subsystem(ABCDEFGHIJ, 'A0C0E0G0I0/0B0D0F0HIJ')`
-# mpd.bottom_up(dicts, key = '100000', letters='A0C0E0G0I0/0B0D0F0HIJ')         `
+# print("Tiempo Heuristica: ", finH - inicioH)
+# print("Tiempo Programacion Dinamica: ", finPD - inicioPD)
+
+new_dict, dicts = subsystem(ABCDEFGH, 'ABCDEFGH/ABCDEFGH')
+# inicioPD = time.time()
+# mpd.bottom_up(dicts, key = '10000000', letters='ABCDEFGH/ABCDEFGH')   
+# finPD = time.time()
+# print("Tiempo Programacion Dinamica: ", finPD - inicioPD)
+inicioH = time.time()
+mhd.heuristic(dicts, key = '10000000', letters='ABCDEFGH/ABCDEFGH')
+finH = time.time()
+print("Tiempo Heuristica: ", finH - inicioH)
+
+# new_dict, dicts = subsystem(ABCDEFGHIJ, 'A0C0E0G0I0/0B0D0F0HIJ')
+# mpd.bottom_up(dicts, key = '100000', letters='A0C0E0G0I0/0B0D0F0HIJ')         
