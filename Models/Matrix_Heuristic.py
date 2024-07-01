@@ -282,7 +282,7 @@ def invertir_diccionario(dic):
         invertido[valor] = clave
     return invertido
 
-def heuristic(dicts, key, letters, threshold=0.9):
+def heuristic(dicts, key, letters, threshold=0.48):
     letters = letters.replace('0', '')
     combinaciones, combinacionesOP = obtener_cadena_valores(letters)
 
